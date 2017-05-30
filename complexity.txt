@@ -1,0 +1,68 @@
+double sum1(std::vector<double>& v)
+{    
+    if (v.empty()) {
+        return 0.0;
+    }
+    (1) for(size_t i = 0; i < v.size() - 1; ++i) {
+    (2)   std::sort(v.begin()+i, v.end());
+        v[i+1] += v[i];
+    }
+    return v.back();
+}
+
+let's say v has a size of n elements;
+(1) for loop runs (n-1) times:
+	// std::sort in coommon will run as quicksort(+-) anyway n*log(n) times
+(2)	std::sort will run from 0 to n = n*log(n) times
+							1 to n = (n-1)*log(n-1) times
+							2 to n = (n-2)*log(n-2) times
+							...
+							n-2 to n = 2 * log(2) times
+The sum of step (1) + (2) = n*log(n) + (n-1)*log(n-1) + ... + (n - n-2)*log(2) = 
+	= n*(log(n) + log(n-1) + ... + log2)) - (log(n-1) + 2*log(n-2) + 3*log(n-3) + ... + (n-2)*log(2)) <
+    < n* log(n!) - 0.5*(n^2-3*n+2) * log(2) < n*log(n!) - n^2
+	= O(n*log(n!)-n^2)
+	
+////////////////////////// 
+
+double sum2(std::vector<double>& v)
+{    
+    if (v.empty()) {
+        return 0.0;
+    }
+    (1) for(size_t i = 0; i < v.size() - 1; ++i) {
+    (2)   std::partial_sort(v.begin() + i, v.begin() + i + 2, v.end());
+        v[i+1] += v[i];
+    }
+    return v.back();
+}
+	// partial sort runs in n*log(middle-first) times
+(1) for loop runs (n-1) times:
+(2) std::partial_sort will run from n*log(0 to 2 = const)
+									n*log(1 to 3 = const) 
+									...
+									n*log(n-2 to 2 = const)
+(1) + (2) = n log C + n log C + ... + n log C = log C * ( 0.5(n^2-n)) =
+	= O (n^2 - n)
+
+////////////////////////// 
+
+double sum3(std::vector<double>& v)
+{    
+(1)  std::multiset set(v.begin(), v.end());
+    while (set.size() > 1) {
+     std::multiset<double>::const_iterator itA = set.begin();
+     std::multiset<double>::const_iterator itB = ++set.begin();
+        double c = *itA + *itB;
+(2)        set.erase(itA, itB);        
+(3)        set.insert(c);
+    }
+    return !set.empty() ? *set.begin() 
+                        : 0.0;
+}
+
+multiset is an associative container implemented as binary search(self balancing, AVL or red-black)
+creating is equal to inserting n element. Insert element is log n therefore creating will take n*log(n)
+iterating on elements is linear to range.
+The problem with code, that it never stops if set.size() > 1 (let's say we will add template parameter to (0)
+so the code will be compilable ). Because in (2) we delete one element and in (3) we add one element.
